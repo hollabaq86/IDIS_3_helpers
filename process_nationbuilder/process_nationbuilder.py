@@ -42,7 +42,9 @@ if number_existing_donors == 0:
     donors_writer.writeheader()
 else:
     print("re-using donor file to write")
-existing_donors = [ row["received_from"] for row in donors_reader]
+existing_donors = [row["received_from"] for row in donors_reader]
+existing_donors = list(set(existing_donors))
+working_donors = existing_donors.copy()
 
 # create results file for receipts
 receipts_for_idis = open(
@@ -77,12 +79,10 @@ for row in reader:
         "employer": row["signup_employer"],
         "date_added": datetime.today(),
     }
-    if number_existing_donors == 0:
+    if donor_name not in existing_donors and donor_name not in working_donors:
+        print("Adding a donor! " + donor_name)
         donors_writer.writerow(donor_data)
-    else:
-        if donor_name not in existing_donors:
-            print("Adding a donor!")
-            donors_writer.writerow(donor_data)
+        working_donors.append(donor_name)
     receipts_writer.writerow(donation_data)
 
 print("Finished processing receipts\n")
