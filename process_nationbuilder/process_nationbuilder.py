@@ -1,6 +1,6 @@
 import csv
-import datetime
 import re
+from datetime import datetime
 
 date_regex = re.compile(r"(^\d{2}/\d{2}/\d{4})")
 
@@ -10,7 +10,39 @@ nationbuilder_transactions_export_csv = open(
     "r",
 )
 
+# create or load donor csv file
+
 reader = csv.DictReader(nationbuilder_transactions_export_csv)
+
+# create results file for donors if it doesn't exist
+donor_length_check = open(
+    "/Users/hollystotelmyer/IDIS_3_helpers/process_nationbuilder/input_data/donors.csv",
+    "r",
+)
+#print(len(existing_donors_for_idis.readlines()))
+number_existing_donors = len(donor_length_check.readlines())
+print("number existing numbers: " + str(number_existing_donors))
+donor_length_check.close()
+
+existing_donors_for_idis = open(
+    "/Users/hollystotelmyer/IDIS_3_helpers/process_nationbuilder/input_data/donors.csv",
+    "r",
+)
+donors_reader = csv.DictReader(existing_donors_for_idis)
+donors_writer = None
+donors_headers = ["received_from", "billing_address1", "billing_address2", "billing_city", "billing_state", "billing_zip", "occupation", "employer", "date_added"]
+new_donors_for_idis = open(
+    "/Users/hollystotelmyer/IDIS_3_helpers/process_nationbuilder/input_data/donors.csv",
+    "a",
+)
+donors_writer = csv.DictWriter(new_donors_for_idis, fieldnames=donors_headers)
+
+if number_existing_donors == 0:
+    print("creating donor file to write")
+    donors_writer.writeheader()
+else:
+    print("re-using donor file to write")
+existing_donors = [ row["received_from"] for row in donors_reader]
 
 # create results file for receipts
 receipts_for_idis = open(
@@ -22,30 +54,46 @@ receipts_writer = csv.DictWriter(receipts_for_idis, fieldnames=receipts_headers)
 receipts_writer.writeheader()
 
 ## will need to import list of existing donors at some point, but this is fine to start
-receipts_list = []
+
 for row in reader:
-    name_regex = re.compile(r"(^[\w,']+) ([\w,']+$)")
+    name_regex = re.compile(r"(^[A-zÀ-ÿ,']+) ([A-zÀ-ÿ,' ]*?)([A-zÀ-ÿ,'-]+$)")
     given_name = name_regex.match(row["recruiter_name"]).group(1)
-    surname = name_regex.match(row["recruiter_name"]).group(2)
-    donor_data = {
+    surname = name_regex.match(row["recruiter_name"]).group(3)
+    donor_name = surname + ", " + given_name
+    donation_data = {
         "type": "Individual Contribution",
         "date": date_regex.match(row["created_at"]).group(1),
         "amount": row["amount"].replace("$", ""),
-        "received_from": surname + ", " + given_name,
+        "received_from": donor_name,
     }
+    donor_data = {
+        "received_from": donor_name,
+        "billing_address1": row["billing_address1"],
+        "billing_address2": row["billing_address2"],
+        "billing_city": row["billing_city"],
+        "billing_state": row["billing_state"],
+        "billing_zip": row["billing_zip"],
+        "occupation": row["signup_occupation"],
+        "employer": row["signup_employer"],
+        "date_added": datetime.today(),
+    }
+    if number_existing_donors == 0:
+        donors_writer.writerow(donor_data)
+    else:
+        if donor_name not in existing_donors:
+            print("Adding a donor!")
+            donors_writer.writerow(donor_data)
+    receipts_writer.writerow(donation_data)
 
-    receipts_list.append(donor_data)
-    receipts_writer.writerow(donor_data)
-
-print(f"Finished processing receipts\n")
+print("Finished processing receipts\n")
 
 # import payouts data for compiling expenditures
 
 payouts_filenames = [
-    "nationbuilder-payouts-export-105-2024-10-06.csv",
-    "nationbuilder-payouts-export-107-2024-10-06.csv",
-    "nationbuilder-payouts-export-106-2024-10-06.csv",
-    "nationbuilder-payouts-export-108-2024-10-06.csv",
+    "nationbuilder-payouts-export-240-2025-07-08.csv",
+    "nationbuilder-payouts-export-239-2025-07-08.csv",
+    "nationbuilder-payouts-export-238-2025-07-08.csv",
+    "nationbuilder-payouts-export-237-2025-07-08.csv",
 ]
 
 payouts_data = {}
@@ -71,7 +119,7 @@ for file in payouts_filenames:
         else:
             payouts_data[transformed_date] = amount
 
-print(f"finished compiling expenditures\n")
+print("finished compiling expenditures\n")
 # create results file for expenditures
 expenditures_for_idis_export = open(
     "/Users/hollystotelmyer/IDIS_3_helpers/process_nationbuilder/output_data/expenditures_export.csv",

@@ -17,7 +17,7 @@ In Nationbuilder, export the transactions and payouts you need, and move those f
 Then run the script
 
 ```
-$ uv run process_nationbuilder/process_nationbuilder.by
+$ uv run process_nationbuilder/process_nationbuilder.py
 ```
 
 in the directory `output_data`, you'll see two CSV files to use to file receipts and expenditures on IDIS 3.0.
