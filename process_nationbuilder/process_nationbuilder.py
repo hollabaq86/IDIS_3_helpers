@@ -9,17 +9,13 @@ nationbuilder_transactions_export_csv = open(
     "/Users/hollystotelmyer/IDIS_3_helpers/process_nationbuilder/input_data/nationbuilder-financialtransactions-export-109-2024-10-06.csv",
     "r",
 )
-
-# create or load donor csv file
-
 reader = csv.DictReader(nationbuilder_transactions_export_csv)
 
-# create results file for donors if it doesn't exist
+# create or load donor csv file
 donor_length_check = open(
     "/Users/hollystotelmyer/IDIS_3_helpers/process_nationbuilder/input_data/donors.csv",
     "r",
 )
-#print(len(existing_donors_for_idis.readlines()))
 number_existing_donors = len(donor_length_check.readlines())
 print("number existing numbers: " + str(number_existing_donors))
 donor_length_check.close()
@@ -120,6 +116,7 @@ for file in payouts_filenames:
             payouts_data[transformed_date] = amount
 
 print("finished compiling expenditures\n")
+
 # create results file for expenditures
 expenditures_for_idis_export = open(
     "/Users/hollystotelmyer/IDIS_3_helpers/process_nationbuilder/output_data/expenditures_export.csv",
